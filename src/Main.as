@@ -60,7 +60,7 @@ package
 			
 			// game variables
 			var crowd:Vector.<Rioter> = new Vector.<Rioter>();
-			var crowdCt:int = 50;
+			var crowdCt:int = 150;
 			var cityUnrest:int = 0; // total unhappiness?
 			
 			// crowd bounding box
@@ -136,6 +136,7 @@ package
 						personUnderMouse.rage -= 1;
 						personUnderMouse.timeWaited += 10; // update more frequently
 						personUnderMouse.heatOverlay.alpha += 0.035;
+						personUnderMouse.goalX += randomNumber(0, 2);
 						if (personUnderMouse.heatOverlay.alpha > 1)
 						{
 							personUnderMouse.heatOverlay.alpha = 1;

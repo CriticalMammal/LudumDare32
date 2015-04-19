@@ -32,6 +32,7 @@ package
 		// decision-making
 		public var updateDelay:int; // in seconds
 		public var timeWaited:int;
+		private var emotionChangeCooldown:int = 0;
 		private var personalZone:Rectangle;
 		private var personalZoneSize:int;
 		private var comfortLevel:int;
@@ -150,18 +151,22 @@ package
 			{
 				fear -= 2;
 			}
+			
+			fear = stayInBounds(fear, 100, 0);
+			rage = stayInBounds(rage, 100, 0);
 		}
 		
 		private function makeDecisions():void
 		{	
 			comfortLevel -= 20;
-			if (rage <= 0)
+			
+			if (emotionChangeCooldown > 0)
 			{
-				rage = 0;
+				emotionChangeCooldown --;
 			}
 			
 			// do a fear check to see if they should run away
-			if (fear > 80)
+			if (fear > 80 && emotionChangeCooldown <= 0)
 			{
 				var roll1 = randomNumber(0, rage);
 				var roll2 = randomNumber(0, rage);
@@ -170,12 +175,13 @@ package
 				var rageResist = (roll1 + roll2 + roll3) / 3;
 				
 				// fear succeeded, they're running away now
-				if (rageResist <= 40)
+				if (rageResist <= 0)
 				{
 					maxSpeed = runSpeed;
 					velocity = runVelocity;
 					goalX = runAwayZone + 500;
 					runningAway = true;
+					emotionChangeCooldown = 10;
 				}
 				else // fear failed
 				{
@@ -184,6 +190,7 @@ package
 					goalX = randomNumber(movementSpace.x, movementSpace.x + movementSpace.width);
 					goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
 					runningAway = false;
+					emotionChangeCooldown = 10;
 				}
 			}
 			/*
@@ -199,22 +206,24 @@ package
 				//goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
 				
 				// generate new, feasible position
-				var offsetNorm = 100;
-				var offsetAmtMin = offsetNorm - fear;
-				var offsetAmtMax = offsetNorm - rage;
+				var offsetNorm = 50;
+				var offsetAmtMin = Math.abs(offsetNorm - fear);
+				var offsetAmtMax = Math.abs(offsetNorm - rage);
 				var randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
 				var randomOffsetY = randomNumber( -offsetNorm, offsetNorm);
+				
 				while (goalX + randomOffsetX > movementSpace.x + movementSpace.width ||
 						goalX + randomOffsetX < movementSpace.x)
 					{
 						randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
 					}
+					
 				while (goalY + randomOffsetY > movementSpace.y + movementSpace.height ||
 						goalY + randomOffsetY < movementSpace.y)
-						{
-							randomOffsetY = randomNumber(-offsetNorm, offsetNorm);
-						}
-						
+					{
+						randomOffsetY = randomNumber(-offsetNorm, offsetNorm);
+					}
+				
 				goalX += randomOffsetX;
 				goalY += randomOffsetY;
 				comfortLevel = 100;
@@ -225,6 +234,20 @@ package
 		public function randomNumber(minNum, maxNum)
 		{
 			return (Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum); 
+		}
+		
+		private function stayInBounds(value:Number, max:Number, min:Number):Number
+		{
+			if (value > max)
+			{
+				value = max;
+			}
+			else if (value < min)
+			{
+				value = min;
+			}
+			
+			return value;
 		}
 	}
 
