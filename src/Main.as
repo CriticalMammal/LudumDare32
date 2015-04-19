@@ -60,7 +60,7 @@ package
 			
 			// game variables
 			var crowd:Vector.<Rioter> = new Vector.<Rioter>();
-			var crowdCt:int = 150;
+			var crowdCt:int = 200;
 			var cityUnrest:int = 0; // total unhappiness?
 			
 			// crowd bounding box
@@ -114,7 +114,9 @@ package
 					crowd[i].update();
 					if (crowd[i].removeFromRiot == true)
 					{
+						var personRef:Rioter = crowd[i];
 						crowd.splice(i, 1);
+						cameraContainer.removeChild(personRef);
 						continue;
 					}
 					
@@ -123,6 +125,7 @@ package
 				cityUnrest /= crowdCt; //gives the average rage
 				
 				crowdTextDisplay.text = "Crowd Count: " + crowd.length;
+				crowdTextDisplay.text = " ";
 				crowdTextDisplay.setTextFormat(myFormat);
 				
 				//mouse pointer stuff?
@@ -132,10 +135,10 @@ package
 					if (myObjects[i].parent is Rioter)
 					{
 						var personUnderMouse:Rioter = myObjects[i].parent as Rioter;
-						personUnderMouse.fear += 3;
-						personUnderMouse.rage -= 1;
+						//personUnderMouse.fear += 3;
+						//personUnderMouse.rage -= 1;
 						personUnderMouse.timeWaited += 10; // update more frequently
-						personUnderMouse.heatOverlay.alpha += 0.035;
+						personUnderMouse.health -= 1;
 						personUnderMouse.goalX += randomNumber(0, 2);
 						if (personUnderMouse.heatOverlay.alpha > 1)
 						{

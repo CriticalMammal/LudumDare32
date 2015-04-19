@@ -41,10 +41,15 @@ package
 		private var runAwayZone:int;
 		
 		// emotions
-		public var rage:int = 0;
-		public var sorrow:int = 0;
-		public var fear:int = 0;
-		public var excitement:int = 0;
+		public var rage:Number = 0;
+		public var sorrow:Number = 0;
+		public var fear:Number = 0;
+		public var excitement:Number = 0;
+		
+		// health
+		public var health:Number = 100;
+		public var dead:Boolean = false;
+		
 		
 		public function Rioter(stageIn:Stage) 
 		{
@@ -52,6 +57,8 @@ package
 			updateDelay = 2.5 * stageRef.frameRate;
 			timeWaited = 0;
 			comfortLevel = randomNumber(0, 100);
+			
+			//this.cacheAsBitmap = true;
 			
 			runAwayZone =  800 + 100;
 			personalZoneSize = 10;
@@ -61,6 +68,11 @@ package
 		
 		public function update():void
 		{
+			if (dead)
+			{
+				return;
+			}
+			
 			// Movement
 			if (Math.abs(xPos - goalX) > goalDeviation) // move on x axis
 			{
@@ -140,7 +152,7 @@ package
 				timeWaited++;
 			}
 			
-			heatOverlay.alpha -= 0.003;
+			heatOverlay.alpha = (100-health)/100; // percentage of health
 			if (heatOverlay.alpha <= 0)
 			{
 				heatOverlay.alpha = 0;
@@ -152,12 +164,38 @@ package
 				fear -= 2;
 			}
 			
+			if (health <= 20)
+			{
+				if (health <= 0)
+				{
+					dead = true;
+					this.rotation = -90;
+					this.y += this.width;
+				}
+				else
+				{
+					health += 0.01; //slow health regen
+				}
+			}
+			
+			if (health <= 60)
+			{
+				rage -= 2;
+				fear += 3;
+			}
+			
 			fear = stayInBounds(fear, 100, 0);
 			rage = stayInBounds(rage, 100, 0);
+			health = stayInBounds(health, 100, 0);
 		}
 		
 		private function makeDecisions():void
 		{	
+			if (dead)
+			{
+				return;
+			}
+			
 			comfortLevel -= 20;
 			
 			if (emotionChangeCooldown > 0)
@@ -181,7 +219,6 @@ package
 					velocity = runVelocity;
 					goalX = runAwayZone + 500;
 					runningAway = true;
-					emotionChangeCooldown = 10;
 				}
 				else // fear failed
 				{
@@ -193,29 +230,32 @@ package
 					emotionChangeCooldown = 10;
 				}
 			}
-			/*
-			else if (fear > 60)
-			{
-				goalX = runAwayZone + 200;
-			}
-			*/
 			
 			if (comfortLevel <= 30 && runningAway == false)
 			{
-				//goalX = randomNumber(movementSpace.x, movementSpace.x + movementSpace.width);
-				//goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
-				
 				// generate new, feasible position
 				var offsetNorm = 50;
-				var offsetAmtMin = Math.abs(offsetNorm - fear);
-				var offsetAmtMax = Math.abs(offsetNorm - rage);
+				var offsetAmtMin = Math.abs(offsetNorm - fear*(offsetNorm/100));
+				var offsetAmtMax = Math.abs(offsetNorm - rage*(offsetNorm/100));
 				var randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
 				var randomOffsetY = randomNumber( -offsetNorm, offsetNorm);
 				
+				var iterations = 0;
 				while (goalX + randomOffsetX > movementSpace.x + movementSpace.width ||
 						goalX + randomOffsetX < movementSpace.x)
-					{
-						randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
+					{	
+						if (iterations > 100)
+						{
+							randomOffsetX = randomNumber( -offsetNorm, offsetNorm);
+							trace("failed to provide proper randomization");
+							//break;
+						}
+						else
+						{
+							randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
+						}
+						
+						iterations ++;
 					}
 					
 				while (goalY + randomOffsetY > movementSpace.y + movementSpace.height ||
