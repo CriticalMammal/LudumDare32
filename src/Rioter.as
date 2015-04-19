@@ -20,8 +20,12 @@ package
 		public var goalY:Number = 0;
 		private var speedX:Number = 0;
 		private var speedY:Number = 0;
-		private var maxSpeed:Number = 2;
-		private var velocity:Number = 0.05;
+		private var walkSpeed:Number = 1;
+		private var runSpeed:Number = 1.5;
+		private var maxSpeed:Number = walkSpeed;
+		private var walkVelocity:Number = 0.005;
+		private var runVelocity:Number = 0.03;
+		private var velocity:Number = walkVelocity;
 		private var friction:Number = 0.85;
 		private var goalDeviation:Number = 10; // maximum allowed deviation from goal spot
 		
@@ -44,7 +48,7 @@ package
 		public function Rioter(stageIn:Stage) 
 		{
 			stageRef = stageIn;
-			updateDelay = 2 * stageRef.frameRate;
+			updateDelay = 2.5 * stageRef.frameRate;
 			timeWaited = 0;
 			comfortLevel = randomNumber(0, 100);
 			
@@ -134,19 +138,30 @@ package
 			{
 				timeWaited++;
 			}
+			
+			heatOverlay.alpha -= 0.003;
+			if (heatOverlay.alpha <= 0)
+			{
+				heatOverlay.alpha = 0;
+			}
+			
+			// return status to a normal level
+			if (fear >= 50)
+			{
+				fear -= 2;
+			}
 		}
 		
 		private function makeDecisions():void
-		{
-			fear += randomNumber(0, 4);
-			comfortLevel -= 40;
+		{	
+			comfortLevel -= 20;
 			if (rage <= 0)
 			{
 				rage = 0;
 			}
 			
 			// do a fear check to see if they should run away
-			if (fear > 60)
+			if (fear > 80)
 			{
 				var roll1 = randomNumber(0, rage);
 				var roll2 = randomNumber(0, rage);
@@ -155,18 +170,28 @@ package
 				var rageResist = (roll1 + roll2 + roll3) / 3;
 				
 				// fear succeeded, they're running away now
-				if (rageResist <= 50)
+				if (rageResist <= 40)
 				{
+					maxSpeed = runSpeed;
+					velocity = runVelocity;
 					goalX = runAwayZone + 500;
 					runningAway = true;
 				}
 				else // fear failed
 				{
+					maxSpeed = walkSpeed;
+					velocity = walkVelocity;
 					goalX = randomNumber(movementSpace.x, movementSpace.x + movementSpace.width);
 					goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
 					runningAway = false;
 				}
 			}
+			/*
+			else if (fear > 60)
+			{
+				goalX = runAwayZone + 200;
+			}
+			*/
 			
 			if (comfortLevel <= 30 && runningAway == false)
 			{
@@ -174,17 +199,20 @@ package
 				//goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
 				
 				// generate new, feasible position
-				var randomOffsetX = randomNumber( -50, 50);
-				var randomOffsetY = randomNumber( -50, 50);
+				var offsetNorm = 100;
+				var offsetAmtMin = offsetNorm - fear;
+				var offsetAmtMax = offsetNorm - rage;
+				var randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
+				var randomOffsetY = randomNumber( -offsetNorm, offsetNorm);
 				while (goalX + randomOffsetX > movementSpace.x + movementSpace.width ||
 						goalX + randomOffsetX < movementSpace.x)
 					{
-						randomOffsetX = randomNumber( -50, 50);
+						randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
 					}
 				while (goalY + randomOffsetY > movementSpace.y + movementSpace.height ||
 						goalY + randomOffsetY < movementSpace.y)
 						{
-							randomOffsetY = randomNumber( -50, 50);
+							randomOffsetY = randomNumber(-offsetNorm, offsetNorm);
 						}
 						
 				goalX += randomOffsetX;

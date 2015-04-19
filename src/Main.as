@@ -5,6 +5,7 @@ package
 	import flash.display.Stage;
 	import flash.events.Event;
 	import flash.geom.Rectangle;
+	import flash.geom.Point;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	/**
@@ -78,7 +79,7 @@ package
 				var newRioter:Rioter = new Rioter(stageRef);
 				
 				//set rioter's emotional properties
-				newRioter.rage = randomNumber(20, 100);
+				newRioter.rage = randomNumber(20, 70);
 				newRioter.sorrow = randomNumber(0, 30);
 				newRioter.fear = randomNumber(0, 40);
 				newRioter.excitement = randomNumber(20, 90);
@@ -93,6 +94,7 @@ package
 				newRioter.goalX = newRioter.x;
 				newRioter.goalY = newRioter.y;
 				newRioter.timeWaited = randomNumber(0, newRioter.updateDelay);
+				newRioter.name = "rioter";
 				
 				crowd.push(newRioter);
 				cameraContainer.addChild(newRioter);
@@ -122,7 +124,44 @@ package
 				
 				crowdTextDisplay.text = "Crowd Count: " + crowd.length;
 				crowdTextDisplay.setTextFormat(myFormat);
+				
+				//mouse pointer stuff?
+				var myObjects:Array = getObjectsUnderPoint(new Point(mouseX, mouseY));
+				for (var i = 0; i < myObjects.length; i++)
+				{
+					if (myObjects[i].parent is Rioter)
+					{
+						var personUnderMouse:Rioter = myObjects[i].parent as Rioter;
+						personUnderMouse.fear += 3;
+						personUnderMouse.rage -= 1;
+						personUnderMouse.timeWaited += 10; // update more frequently
+						personUnderMouse.heatOverlay.alpha += 0.035;
+						if (personUnderMouse.heatOverlay.alpha > 1)
+						{
+							personUnderMouse.heatOverlay.alpha = 1;
+						}
+					}
+				}
+				
+				// sort the crowd by y positions
+				crowd = Vector.<Rioter>(vectorToArray(crowd).sortOn("yPos", Array.NUMERIC));
+				for each(var r:Rioter in crowd)
+				{
+					r.parent && r.parent.addChild(r);
+				}
 			}
+		}
+		
+		/**
+		* Converts vector to an array
+		* @param    v:*        vector to be converted
+		* @return    Array    converted array
+		*/
+		public function vectorToArray(v:*):Array
+		{
+			var n:int = v.length; var a:Array = new Array();
+			for(var i:int = 0; i < n; i++) a[i] = v[i];
+			return a;
 		}
 		
 		// Get random number in a range
