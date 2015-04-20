@@ -4,9 +4,12 @@ package
 	import flash.display.Sprite;
 	import flash.display.Stage;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
+	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
 	import flash.geom.Point;
 	import flash.text.TextField;
+	import flash.text.TextFieldType;
 	import flash.text.TextFormat;
 	/**
 	 * ...
@@ -20,6 +23,12 @@ package
 		public var gameRateMultiplier:Number = 1;
 		public var worldSpeed:Number = 60 * gameRateMultiplier;
 		public var cameraContainer:Sprite; // everything visual goes in this
+		
+		// game variables
+		public var crowdTextDisplay:TextField;
+		public var crowd:Vector.<Rioter>;
+		public var tank:Tank;
+		public var menu:Menu;
 		
 		// Constructor
 		public function Main(stageRef:Stage = null)
@@ -37,8 +46,9 @@ package
 			addChild(cameraContainer);
 			game();// game will play in background at all times
 			
-			var menu:Menu = new Menu(); // menu will overlay and allow options
+			menu = new Menu(); // menu will overlay and allow options
 			addChild(menu);
+			//menu.popUp();
 		}
 		
 		public function game():void
@@ -48,7 +58,9 @@ package
 			myFormat.color = 0xFFFFFF; 
 			myFormat.size = 30;
 			
-			var crowdTextDisplay:TextField = new TextField();
+			crowdTextDisplay = new TextField();
+			crowdTextDisplay.type = TextFieldType.DYNAMIC;
+			crowdTextDisplay.selectable = false;
 			crowdTextDisplay.x = 300;
 			crowdTextDisplay.y = 100;
 			crowdTextDisplay.width = 500;
@@ -59,19 +71,27 @@ package
 			cameraContainer.addChild(crowdTextDisplay);
 			
 			// game variables
-			var crowd:Vector.<Rioter> = new Vector.<Rioter>();
+			crowd = new Vector.<Rioter>();
 			var crowdCt:int = 200;
-			var cityUnrest:int = 0; // total unhappiness?
+			var cityUnrest:Number = 50; // total unhappiness?
+			var mouseIsDown:Boolean = false;
+			var microwaveRageAmt:Number = 0;
+			var microwaveSorrowAmt:Number = 0;
+			var microwaveFearAmt:Number = 0;
+			var microwaveDamage:Number = 0;
 			
 			// crowd bounding box
-			var crowdX:int = 300;
+			var crowdX:int = 350;
 			var crowdY:int = 200;
 			var crowdWidth:int = 400;
 			var crowdHeight:int = 200;
 			var crowdBoundaries:Rectangle = new Rectangle(crowdX, crowdY, crowdWidth, crowdHeight);
 			
 			// create initial scene
-			
+			tank = new Tank();
+			tank.x = 30;
+			tank.y = 230;
+			cameraContainer.addChild(tank);
 			
 			// initialize people in the crowd
 			for (var i:int = 0; i < crowdCt; i++)
@@ -101,13 +121,13 @@ package
 			}
 			
 			addEventListener(Event.ENTER_FRAME, mainLoop, false, 0, false);
+			stageRef.addEventListener(MouseEvent.MOUSE_DOWN, mouseClicked, false, 0, false);
+			stageRef.addEventListener(MouseEvent.MOUSE_UP, mouseUp, false, 0, false);
+			//stageRef.addEventListener(MouseEvent.RIGHT_MOUSE_DOWN, selfDestruct);
+			
 			
 			function mainLoop(e:Event):void
-			{
-				// total the city variables to understand if you need to add more people
-				// to the crowd
-				cityUnrest = 0;
-				
+			{	
 				for (i = 0; i < crowd.length; i++)
 				{
 					// update rioters
@@ -120,31 +140,70 @@ package
 						continue;
 					}
 					
-					cityUnrest += crowd[i].rage;
+					if (crowd[i].dead && crowd[i].deathCollected == false)
+					{
+						cityUnrest ++;
+						crowd[i].deathCollected = true;
+					}
+					
+					crowd[i].rage += cityUnrest / 200;
+					
+					if (cityUnrest <= 0)
+					{
+						crowd[i].sorrow += 0.05;
+					}
 				}
-				cityUnrest /= crowdCt; //gives the average rage
 				
-				crowdTextDisplay.text = "Crowd Count: " + crowd.length;
+				cityUnrest -= 0.005;
+				cityUnrest = stayInBounds(cityUnrest, 200, 0);
+				
+				crowdTextDisplay.text = "City Unrest: " + cityUnrest;
 				crowdTextDisplay.text = " ";
 				crowdTextDisplay.setTextFormat(myFormat);
 				
-				//mouse pointer stuff?
-				var myObjects:Array = getObjectsUnderPoint(new Point(mouseX, mouseY));
-				for (var i = 0; i < myObjects.length; i++)
+				// updating microwave laser thing
+				microwaveRageAmt = menu.emotionControlRage.powerLevel*2;
+				microwaveSorrowAmt = menu.emotionControlSorrow.powerLevel*2;
+				microwaveFearAmt = menu.emotionControlFear.powerLevel*2;
+				
+				microwaveDamage = (Math.abs(microwaveRageAmt) + Math.abs(microwaveSorrowAmt) + Math.abs(microwaveFearAmt)) / 3;
+				var tempDisplay = int((microwaveDamage)*100)/100;
+				menu.microwaveDamage.text = tempDisplay;
+				
+				// mouse interaction
+				if (mouseIsDown)
 				{
-					if (myObjects[i].parent is Rioter)
+					var myObjects:Array = getObjectsUnderPoint(new Point(mouseX, mouseY));
+					for (var i = 0; i < myObjects.length; i++)
 					{
-						var personUnderMouse:Rioter = myObjects[i].parent as Rioter;
-						//personUnderMouse.fear += 3;
-						//personUnderMouse.rage -= 1;
-						personUnderMouse.timeWaited += 10; // update more frequently
-						personUnderMouse.health -= 1;
-						personUnderMouse.goalX += randomNumber(0, 2);
-						if (personUnderMouse.heatOverlay.alpha > 1)
+						if (myObjects[i].parent is Rioter)
 						{
-							personUnderMouse.heatOverlay.alpha = 1;
+							var personUnderMouse:Rioter = myObjects[i].parent as Rioter;
+							personUnderMouse.fear += microwaveFearAmt;
+							personUnderMouse.sorrow += microwaveSorrowAmt;
+							personUnderMouse.rage += microwaveRageAmt;
+							personUnderMouse.health -= microwaveDamage;
+							personUnderMouse.timeWaited += 10; // update more frequently
+							personUnderMouse.goalX += randomNumber(0, microwaveDamage);
+							if (personUnderMouse.heatOverlay.alpha > 1)
+							{
+								personUnderMouse.heatOverlay.alpha = 1;
+							}
 						}
 					}
+				}
+				
+				if (tank.isClicked)
+				{
+					if (menu.isOpen)
+					{
+						menu.popOut();
+					}
+					else
+					{
+						menu.popUp();
+					}
+					tank.isClicked = false;
 				}
 				
 				// sort the crowd by y positions
@@ -154,6 +213,49 @@ package
 					r.parent && r.parent.addChild(r);
 				}
 			}
+			
+			function mouseClicked(e:MouseEvent):void
+			{
+				mouseIsDown = true;
+			}
+			
+			function mouseUp(e:MouseEvent):void
+			{
+				mouseIsDown = false;
+			}
+			
+			function selfDestruct(e:MouseEvent):void
+			{
+				removeEventListener(Event.ENTER_FRAME, mainLoop);
+				stageRef.removeEventListener(MouseEvent.MOUSE_DOWN, mouseClicked);
+				stageRef.removeEventListener(MouseEvent.MOUSE_UP, mouseUp);
+				stageRef.removeEventListener(MouseEvent.RIGHT_MOUSE_DOWN, selfDestruct);
+				
+				removeGame();
+			}
+		}
+		
+		public function removeGame():void
+		{
+			// fade to black?
+			
+			
+			// remove events
+			//removeEventListener(Event.ENTER_FRAME, mainLoop);
+			//removeEventListener(MouseEvent.MOUSE_DOWN, mouseClicked);
+			//removeEventListener(MouseEvent.MOUSE_UP, mouseUp);
+			//removeEventListener(KeyboardEvent.KEY_DOWN, removeGame);
+			
+			// remove instances
+			for each (var r:Rioter in crowd)
+			{
+				cameraContainer.removeChild(r);
+			}
+			
+			cameraContainer.removeChild(crowdTextDisplay);
+			cameraContainer.removeChild(tank);
+			
+			game();
 		}
 		
 		/**
@@ -172,6 +274,20 @@ package
 		public function randomNumber(minNum, maxNum)
 		{
 			return (Math.floor(Math.random() * (maxNum - minNum + 1)) + minNum); 
+		}
+		
+		private function stayInBounds(value:Number, max:Number, min:Number):Number
+		{
+			if (value > max)
+			{
+				value = max;
+			}
+			else if (value < min)
+			{
+				value = min;
+			}
+			
+			return value;
 		}
 	}
 

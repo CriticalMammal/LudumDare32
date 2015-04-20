@@ -37,8 +37,10 @@ package
 		private var personalZoneSize:int;
 		private var comfortLevel:int;
 		private var runningAway:Boolean = false;
+		private var givingUp:Boolean = false;
 		public var removeFromRiot:Boolean = false;
 		private var runAwayZone:int;
+		private var runAwayFinished:Boolean = true;
 		
 		// emotions
 		public var rage:Number = 0;
@@ -49,12 +51,13 @@ package
 		// health
 		public var health:Number = 100;
 		public var dead:Boolean = false;
+		public var deathCollected:Boolean = false;
 		
 		
 		public function Rioter(stageIn:Stage) 
 		{
 			stageRef = stageIn;
-			updateDelay = 2.5 * stageRef.frameRate;
+			updateDelay = 2 * stageRef.frameRate;
 			timeWaited = 0;
 			comfortLevel = randomNumber(0, 100);
 			
@@ -130,11 +133,19 @@ package
 			this.x = xPos;
 			this.y = yPos;
 			
-			if (runningAway == true)
+			if (givingUp == true)
 			{
 				if (this.x >= runAwayZone)
 				{
 					removeFromRiot = true;
+				}
+			}
+			if (runningAway == true)
+			{
+				if (x >= runAwayZone)
+				{
+					fear -= 0.3;
+					rage += 0.5;
 				}
 			}
 			
@@ -161,27 +172,35 @@ package
 			// return status to a normal level
 			if (fear >= 50)
 			{
-				fear -= 2;
+				fear -= 0.1;
+			}
+			if (rage >= 70)
+			{
+				rage -= 0.1;
 			}
 			
-			if (health <= 20)
+			// health based stuff
+			if (health <= 100)
 			{
-				if (health <= 0)
+				if (health <= 40)
 				{
-					dead = true;
-					this.rotation = -90;
-					this.y += this.width;
+					rage -= 2;
+					fear += 3;
+					
+					if (health <= 20)
+					{
+						if (health <= 0)
+						{
+							dead = true;
+							
+							var currentAlpha = heatOverlay.alpha;
+							heatOverlay.alpha = 0;
+							this.gotoAndPlay("death");
+						}
+					}
 				}
-				else
-				{
-					health += 0.01; //slow health regen
-				}
-			}
-			
-			if (health <= 60)
-			{
-				rage -= 2;
-				fear += 3;
+				
+				health += (health/100)/30; //slow health regen
 			}
 			
 			fear = stayInBounds(fear, 100, 0);
@@ -196,7 +215,7 @@ package
 				return;
 			}
 			
-			comfortLevel -= 20;
+			comfortLevel -= 10;
 			
 			if (emotionChangeCooldown > 0)
 			{
@@ -212,13 +231,14 @@ package
 				
 				var rageResist = (roll1 + roll2 + roll3) / 3;
 				
-				// fear succeeded, they're running away now
-				if (rageResist <= 0)
+				// fear succeeded, they're running away now. Rage roll was too low
+				if (rageResist <= 40)
 				{
 					maxSpeed = runSpeed;
 					velocity = runVelocity;
-					goalX = runAwayZone + 500;
+					goalX = runAwayZone + randomNumber(1, 20);
 					runningAway = true;
+					runAwayFinished = false;
 				}
 				else // fear failed
 				{
@@ -230,39 +250,92 @@ package
 					emotionChangeCooldown = 10;
 				}
 			}
+			else
+			{
+				roll1 = randomNumber(0, rage);
+				roll2 = randomNumber(0, rage);
+				roll3 = randomNumber(0, rage);
+				
+				rageResist = (roll1 + roll2 + roll3) / 3;
+				
+				if (rageResist >= 40)
+				{
+					maxSpeed = walkSpeed;
+					velocity = walkVelocity;
+					runningAway = false;
+					runAwayFinished = false;
+				}
+			}
+			
+			if (runningAway)
+			{
+				if (sorrow >= 60)
+				{
+					// roll sorrow vs. rage
+					roll1 = randomNumber(0, rage);
+					roll2 = randomNumber(0, rage);
+					roll3 = randomNumber(0, rage);
+					
+					rageResist = (roll1 + roll2 + roll3) / 3;
+					
+					// giving up succeeds, rage roll was too low
+					if (rageResist <= 60)
+					{
+						givingUp = true;
+					}
+				}
+			}
 			
 			if (comfortLevel <= 30 && runningAway == false)
 			{
 				// generate new, feasible position
-				var offsetNorm = 50;
+				var offsetNorm = Math.abs( 50 + randomNumber(0, rage) + randomNumber(0, fear) );
 				var offsetAmtMin = Math.abs(offsetNorm - fear*(offsetNorm/100));
 				var offsetAmtMax = Math.abs(offsetNorm - rage*(offsetNorm/100));
 				var randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
 				var randomOffsetY = randomNumber( -offsetNorm, offsetNorm);
 				
+				if (runningAway == false && runAwayFinished == false)
+				{
+					goalX = randomNumber(movementSpace.x, movementSpace.x + movementSpace.width - 50);
+					goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
+					comfortLevel = 100;
+					
+					if (x < movementSpace.x + movementSpace.width &&
+							x > movementSpace.x)
+							{
+								runAwayFinished = true;
+							}
+					return;
+				}
+				
 				var iterations = 0;
 				while (goalX + randomOffsetX > movementSpace.x + movementSpace.width ||
 						goalX + randomOffsetX < movementSpace.x)
-					{	
-						if (iterations > 100)
-						{
-							randomOffsetX = randomNumber( -offsetNorm, offsetNorm);
-							trace("failed to provide proper randomization");
-							//break;
-						}
-						else
-						{
-							randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
-						}
-						
-						iterations ++;
+				{
+					if (iterations > 100)
+					{
+						randomOffsetX = randomNumber( -offsetNorm, offsetNorm);
 					}
+					else if (iterations > 500)
+					{
+						goalX = movementSpace.x + movementSpace.width - 50;
+						goalY = movementSpace.y + movementSpace.height;
+						return;
+					}
+					else
+					{
+						randomOffsetX = randomNumber( -offsetAmtMin, offsetAmtMax);
+					}
+					
+					iterations ++;
+				}
 					
 				while (goalY + randomOffsetY > movementSpace.y + movementSpace.height ||
 						goalY + randomOffsetY < movementSpace.y)
-					{
-						randomOffsetY = randomNumber(-offsetNorm, offsetNorm);
-					}
+				{
+					randomOffsetY = randomNumber(-offsetNorm, offsetNorm);
+				}
 				
 				goalX += randomOffsetX;
 				goalY += randomOffsetY;
