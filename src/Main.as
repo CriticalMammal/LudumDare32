@@ -69,7 +69,7 @@ package
 			menu = new Menu(); // menu will overlay and allow options
 			addChild(menu);
 			
-			bgAmbienceTransform.volume = 1.5;
+			bgAmbienceTransform.volume = 1.8;
 			bgAmbienceChannel.soundTransform = bgAmbienceTransform;
 			bgAmbienceChannel = bgAmbience.play(0, int.MAX_VALUE, bgAmbienceTransform);
 			
@@ -86,8 +86,9 @@ package
 		{
 			// placeholder stuff
 			var myFormat:TextFormat = new TextFormat();
-			myFormat.color = 0xFFFFFF; 
+			myFormat.color = 0xDED5D1; 
 			myFormat.size = 30;
+			myFormat.bold = true;
 			
 			crowdTextDisplay = new TextField();
 			crowdTextDisplay.type = TextFieldType.DYNAMIC;
@@ -97,13 +98,15 @@ package
 			crowdTextDisplay.width = 500;
 			crowdTextDisplay.height = 100;
 			crowdTextDisplay.wordWrap = true;
-			crowdTextDisplay.text = "Crowd Count: ";
+			crowdTextDisplay.text = "Control the Rioting Crowd";
 			crowdTextDisplay.setTextFormat(myFormat);  
 			addChild(crowdTextDisplay);
 			
+			var instructionsDisplayCt:int = 0;
+			
 			// game variables
 			crowd = new Vector.<Rioter>();
-			var crowdCt:int = 150;
+			var crowdCt:int = 200;
 			var crowdDeathCt:int = 0;
 			var crowdRealCt:int = crowdCt;
 			var cityUnrest:Number = 50; // total unhappiness?
@@ -186,11 +189,11 @@ package
 						crowdDeathCt ++;
 					}
 					
-					crowd[i].rage += cityUnrest / 200;
+					crowd[i].rage += cityUnrest / 1000;
 					
 					if (cityUnrest <= 0)
 					{
-						crowd[i].sorrow += 0.5;
+						crowd[i].sorrow += 0.01;
 					}
 					
 					if (tank.destroyed)
@@ -210,10 +213,23 @@ package
 				cityUnrest = stayInBounds(cityUnrest, 200, 0);
 				
 				crowdTextDisplay.text = "City Unrest: " + cityUnrest;
-				crowdTextDisplay.text = " ";
+				if (instructionsDisplayCt <= 6*60 && instructionsDisplayCt>2*60)
+				{
+					crowdTextDisplay.text = "Control the Rioting Crowd";
+				}
+				else
+				{
+					crowdTextDisplay.text = " ";
+				}
+				instructionsDisplayCt ++;
+				
 				if (crowdRealCt <= 0)
 				{
-					crowdTextDisplay.text = "Crowd was controlled. " + crowdDeathCt + " killed";
+					crowdTextDisplay.text = "Crowd was Controlled - " + crowdDeathCt + " Killed";
+				}
+				else if (tank.destroyed)
+				{
+					crowdTextDisplay.text = "Disorder - Tank Operator Killed";
 				}
 				crowdTextDisplay.setTextFormat(myFormat);
 				
@@ -398,7 +414,7 @@ package
 				cameraContainer.removeChild(r);
 			}
 			
-			cameraContainer.removeChild(crowdTextDisplay);
+			removeChild(crowdTextDisplay);
 			cameraContainer.removeChild(tank);
 			
 			game();

@@ -76,7 +76,7 @@ package
 		{
 			playHitFadeIn = true;
 			playHitFadeOut = false;
-			health -= 1;
+			health -= 3.8;
 		}
 		
 		private function clickFunction(e:MouseEvent):void

@@ -41,6 +41,7 @@ package
 		public var removeFromRiot:Boolean = false;
 		private var runAwayZone:int;
 		private var runAwayFinished:Boolean = true;
+		private var timeInRunAwayZone:int = 0;
 		
 		// other
 		private var tankRef:Tank;
@@ -164,9 +165,18 @@ package
 			{
 				if (x >= runAwayZone)
 				{
-					fear -= 0.1;
-					rage += 0.5;
+					fear -= 0.02;
+					rage += 0.04;
 				}
+			}
+			else if (x >= runAwayZone && runningAway == false)
+			{
+				if (timeInRunAwayZone >= 60 * 5)
+				{
+					goalX = randomNumber(movementSpace.x + 30, movementSpace.x + movementSpace.width - 30);
+					timeInRunAwayZone = 0;
+				}
+				timeInRunAwayZone ++;
 			}
 			
 			personalZone = new Rectangle(x - personalZoneSize, y - personalZoneSize,
@@ -192,7 +202,7 @@ package
 			// return status to a normal level
 			if (fear >= 50)
 			{
-				//fear -= 0.005;
+				fear -= 0.005;
 			}
 			if (rage >= 50)
 			{
@@ -295,9 +305,8 @@ package
 			}
 			else
 			{
-				//currentThrowCooldown -= 1;
-				currentThrowCooldown -= (rage / 200) * 2;
-				currentThrowCooldown += (fear / 200) * 1.5;
+				currentThrowCooldown -= (rage / 200) * 5;
+				currentThrowCooldown += (fear / 400) * 1.5;
 			}
 			
 			comfortLevel -= 10;
@@ -354,7 +363,7 @@ package
 			}
 			
 			// do a pure sorrow check
-			if (sorrow > 90)
+			if (sorrow > 80)
 			{
 				roll1 = randomNumber(0, rage);
 				roll2 = randomNumber(0, rage);
