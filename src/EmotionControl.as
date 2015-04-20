@@ -11,6 +11,7 @@ package
 	public class EmotionControl extends MovieClip 
 	{
 		public var powerLevel:int = 0; // 0 is neutral
+		public var powerOff:Boolean = false;
 		
 		public function EmotionControl() 
 		{
@@ -29,6 +30,17 @@ package
 		
 		private function increaseClick(e:MouseEvent):void
 		{
+			if (powerOff)
+			{
+				powerLevel = 0;
+				powerDown2.visible = false;
+				powerDown1.visible = false;
+				powerDown0.visible = false;
+				powerUp0.visible = false;
+				powerUp1.visible = false;
+				powerUp2.visible = false;
+				return;
+			}
 			powerLevel ++;
 			if (powerLevel > 3)
 			{
@@ -81,6 +93,17 @@ package
 		
 		private function decreaseClick(e:MouseEvent):void
 		{
+			if (powerOff)
+			{
+				powerLevel = 0;
+				powerDown2.visible = false;
+				powerDown1.visible = false;
+				powerDown0.visible = false;
+				powerUp0.visible = false;
+				powerUp1.visible = false;
+				powerUp2.visible = false;
+				return;
+			}
 			powerLevel --;
 			if (powerLevel < -3)
 			{
@@ -128,6 +151,18 @@ package
 			}
 		}
 		
+		
+		public function turnOffPower():void
+		{
+			powerOff = true;
+			powerLevel = 0;
+			powerDown2.visible = false;
+			powerDown1.visible = false;
+			powerDown0.visible = false;
+			powerUp0.visible = false;
+			powerUp1.visible = false;
+			powerUp2.visible = false;
+		}
 	}
 
 }

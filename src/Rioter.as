@@ -108,6 +108,11 @@ package
 				speedX *= friction;
 			}
 			
+			if (x <= movementSpace.x)
+			{
+				speedX += velocity;
+			}
+			
 			if (Math.abs(yPos - goalY) > goalDeviation) // move on y axis
 			{
 				if (yPos < goalY)
@@ -133,6 +138,15 @@ package
 				speedY *= friction;
 			}
 			
+			if (y <= movementSpace.y)
+			{
+				speedY += velocity;
+			}
+			else if (y >= movementSpace.y + movementSpace.height)
+			{
+				speedY -= velocity;
+			}
+			
 			xPos += speedX;
 			yPos += speedY;
 			
@@ -146,11 +160,11 @@ package
 					removeFromRiot = true;
 				}
 			}
-			if (runningAway == true)
+			else if (runningAway == true)
 			{
 				if (x >= runAwayZone)
 				{
-					fear -= 0.3;
+					fear -= 0.1;
 					rage += 0.5;
 				}
 			}
@@ -178,11 +192,15 @@ package
 			// return status to a normal level
 			if (fear >= 50)
 			{
-				fear -= 0.1;
+				//fear -= 0.005;
 			}
-			if (rage >= 70)
+			if (rage >= 50)
 			{
-				rage -= 0.1;
+				rage -= 0.005;
+			}
+			if (sorrow >= 50)
+			{
+				sorrow -= rage / 500;
 			}
 			
 			// health based stuff
@@ -190,8 +208,7 @@ package
 			{
 				if (health <= 40)
 				{
-					rage -= 2;
-					fear += 3;
+					fear += 0.01;
 					
 					if (health <= 20)
 					{
@@ -206,7 +223,7 @@ package
 					}
 				}
 				
-				health += (health/100)/30; //slow health regen
+				health += (health/100)/20; //slow health regen
 			}
 			
 			fear = stayInBounds(fear, 100, 0);
@@ -221,6 +238,53 @@ package
 				return;
 			}
 			
+			// animations
+			/*
+			if (rage > fear && rage >= 90)
+			{
+				if (rage > sorrow)
+				{
+					// rage
+					if (currentFrameLabel != "rage")
+					{
+						gotoAndPlay("rage");
+					}
+					
+				}
+				else
+				{
+					// sorrow
+					if (currentFrameLabel != "sorrow")
+					{
+						gotoAndPlay("sorrow");
+					}
+				}
+			}
+			else if (fear > rage && fear > 70)
+			{
+				// fear
+				if (currentFrameLabel != "fear")
+				{
+					gotoAndPlay("fear");
+				}
+			}
+			else if (sorrow > rage)
+			{
+				// sorrow
+				if (currentFrameLabel != "sorrow")
+				{
+					gotoAndPlay("sorrow");
+				}
+			}
+			else
+			{
+				if (currentFrameLabel != "idle")
+				{
+					gotoAndPlay("idle");
+				}
+			}
+			*/
+			
 			// attack tank
 			if (x - tankRef.x <= 550 && currentThrowCooldown <= 0) //330
 			{
@@ -231,7 +295,9 @@ package
 			}
 			else
 			{
-				currentThrowCooldown -= 1;
+				//currentThrowCooldown -= 1;
+				currentThrowCooldown -= (rage / 200) * 2;
+				currentThrowCooldown += (fear / 200) * 1.5;
 			}
 			
 			comfortLevel -= 10;
@@ -242,7 +308,7 @@ package
 			}
 			
 			// do a fear check to see if they should run away
-			if (fear > 80 && emotionChangeCooldown <= 0)
+			if (fear > 70 && emotionChangeCooldown <= 0)
 			{
 				var roll1 = randomNumber(0, rage);
 				var roll2 = randomNumber(0, rage);
@@ -263,10 +329,11 @@ package
 				{
 					maxSpeed = walkSpeed;
 					velocity = walkVelocity;
-					goalX = randomNumber(movementSpace.x, movementSpace.x + movementSpace.width);
-					goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
+					goalX = randomNumber(movementSpace.x+30, movementSpace.x + movementSpace.width-30);
+					goalY = randomNumber(movementSpace.y+30, movementSpace.y + movementSpace.height-30);
 					runningAway = false;
-					emotionChangeCooldown = 10;
+					emotionChangeCooldown = 2;
+					return;
 				}
 			}
 			else
@@ -282,13 +349,33 @@ package
 					maxSpeed = walkSpeed;
 					velocity = walkVelocity;
 					runningAway = false;
+					runAwayFinished = true;
+				}
+			}
+			
+			// do a pure sorrow check
+			if (sorrow > 90)
+			{
+				roll1 = randomNumber(0, rage);
+				roll2 = randomNumber(0, rage);
+				roll3 = randomNumber(0, rage);
+				
+				rageResist = (roll1 + roll2 + roll3) / 3;
+				
+				if (rageResist <= 30)
+				{
+					maxSpeed = walkSpeed/2;
+					velocity = walkVelocity/2;
+					goalX = runAwayZone + randomNumber(1, 20);
+					runningAway = true;
 					runAwayFinished = false;
+					//givingUp = true;
 				}
 			}
 			
 			if (runningAway)
 			{
-				if (sorrow >= 60)
+				if (sorrow >= 80)
 				{
 					// roll sorrow vs. rage
 					roll1 = randomNumber(0, rage);
@@ -298,11 +385,13 @@ package
 					rageResist = (roll1 + roll2 + roll3) / 3;
 					
 					// giving up succeeds, rage roll was too low
-					if (rageResist <= 60)
+					if (rageResist <= 30)
 					{
 						givingUp = true;
 					}
 				}
+				
+				rage += 0.005;
 			}
 			
 			if (comfortLevel <= 30 && runningAway == false)
@@ -316,14 +405,17 @@ package
 				
 				if (runningAway == false && runAwayFinished == false)
 				{
-					goalX = randomNumber(movementSpace.x, movementSpace.x + movementSpace.width - 50);
-					goalY = randomNumber(movementSpace.y, movementSpace.y + movementSpace.height);
+					goalX = randomNumber(movementSpace.x+50, movementSpace.x + movementSpace.width - 50);
+					goalY = randomNumber(movementSpace.y+50, movementSpace.y + movementSpace.height-50);
 					comfortLevel = 100;
 					
 					if (x < movementSpace.x + movementSpace.width &&
 							x > movementSpace.x)
 							{
-								runAwayFinished = true;
+								if (fear <= 60)
+								{
+									runAwayFinished = true;
+								}
 							}
 					return;
 				}
@@ -332,15 +424,16 @@ package
 				while (goalX + randomOffsetX > movementSpace.x + movementSpace.width ||
 						goalX + randomOffsetX < movementSpace.x)
 				{
-					if (iterations > 100)
+					if (iterations > 30)
+					{
+						goalX = movementSpace.x + movementSpace.width-50;
+						goalY = movementSpace.y + movementSpace.height/2;
+						comfortLevel = 100;
+						return;
+					}
+					else if (iterations > 20)
 					{
 						randomOffsetX = randomNumber( -offsetNorm, offsetNorm);
-					}
-					else if (iterations > 500)
-					{
-						goalX = movementSpace.x + movementSpace.width - 50;
-						goalY = movementSpace.y + movementSpace.height;
-						return;
 					}
 					else
 					{

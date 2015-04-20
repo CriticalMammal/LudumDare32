@@ -14,7 +14,7 @@ package
 		public var yPos:Number = 0;
 		private var speedX:Number = 0;
 		private var speedY:Number = 0;
-		private var momentumX:Number = 10;
+		private var momentumX:Number = 12;
 		private var momentumY:Number = 8;
 		private var maxSpeed:Number = 4;
 		private var velocity:Number = 0.3;

@@ -18,10 +18,12 @@ package
 		public var destroyed = false;
 		private var playHitFadeIn = false;
 		private var playHitFadeOut = false;
-		private var maxHitAlpha = 0.6;
+		private var maxHitAlpha = 0.4;
+		public var yPos;
 		
 		public function Tank() 
 		{
+			yPos = y+height;
 			var padding = 30;
 			
 			hitbox = new Sprite();
@@ -42,6 +44,8 @@ package
 		
 		private function update(e:Event):void
 		{
+			yPos = y+(height/2+15);
+			
 			if (health <= 0)
 			{
 				destroyed = true;
@@ -72,7 +76,7 @@ package
 		{
 			playHitFadeIn = true;
 			playHitFadeOut = false;
-			health -= 0.5;
+			health -= 1;
 		}
 		
 		private function clickFunction(e:MouseEvent):void

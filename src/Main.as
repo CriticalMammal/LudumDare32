@@ -1,5 +1,7 @@
 package
 {
+	import flash.display.DisplayObject;
+	import flash.display.DisplayObjectContainer;
 	import flash.display.MovieClip;
 	import flash.display.Sprite;
 	import flash.display.Stage;
@@ -8,6 +10,9 @@ package
 	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
 	import flash.geom.Point;
+	import flash.media.Sound;
+	import flash.media.SoundChannel;
+	import flash.media.SoundTransform;
 	import flash.text.TextField;
 	import flash.text.TextFieldType;
 	import flash.text.TextFormat;
@@ -30,6 +35,19 @@ package
 		public var tank:Tank;
 		public var menu:Menu;
 		
+		// constant playing sounds
+		public var bgAmbience:Sound = new bgAmbienceSound();
+		public var bgAmbienceChannel:SoundChannel = new SoundChannel();
+		public var bgAmbienceTransform:SoundTransform = new SoundTransform();
+		
+		public var crowdYell:Sound = new crowdYellSound();
+		public var crowdYellChannel:SoundChannel = new SoundChannel();
+		public var crowdYellTransform:SoundTransform = new SoundTransform();
+		
+		public var microwaveGun:Sound = new microwaveGunSound();
+		public var microwaveGunChannel:SoundChannel = new SoundChannel();
+		public var microwaveGunTransform:SoundTransform = new SoundTransform();
+		
 		// Constructor
 		public function Main(stageRef:Stage = null)
 		{
@@ -43,12 +61,25 @@ package
 		public function init():void 
 		{
 			cameraContainer = new Sprite();
+			cameraContainer.x = 0;
+			cameraContainer.y = 0;
 			addChild(cameraContainer);
 			game();// game will play in background at all times
 			
 			menu = new Menu(); // menu will overlay and allow options
 			addChild(menu);
-			//menu.popUp();
+			
+			bgAmbienceTransform.volume = 1.5;
+			bgAmbienceChannel.soundTransform = bgAmbienceTransform;
+			bgAmbienceChannel = bgAmbience.play(0, int.MAX_VALUE, bgAmbienceTransform);
+			
+			crowdYellTransform.volume = 0;
+			crowdYellChannel.soundTransform = crowdYellTransform;
+			crowdYellChannel = crowdYell.play(0, int.MAX_VALUE, crowdYellTransform);
+			
+			microwaveGunTransform.volume = 0;
+			microwaveGunChannel.soundTransform = microwaveGunTransform;
+			microwaveGunChannel = microwaveGun.play(0, int.MAX_VALUE, microwaveGunTransform);
 		}
 		
 		public function game():void
@@ -68,11 +99,13 @@ package
 			crowdTextDisplay.wordWrap = true;
 			crowdTextDisplay.text = "Crowd Count: ";
 			crowdTextDisplay.setTextFormat(myFormat);  
-			cameraContainer.addChild(crowdTextDisplay);
+			addChild(crowdTextDisplay);
 			
 			// game variables
 			crowd = new Vector.<Rioter>();
-			var crowdCt:int = 200;
+			var crowdCt:int = 150;
+			var crowdDeathCt:int = 0;
+			var crowdRealCt:int = crowdCt;
 			var cityUnrest:Number = 50; // total unhappiness?
 			var mouseIsDown:Boolean = false;
 			var microwaveRageAmt:Number = 0;
@@ -99,10 +132,10 @@ package
 				var newRioter:Rioter = new Rioter(stageRef, tank);
 				
 				//set rioter's emotional properties
-				newRioter.rage = randomNumber(20, 70);
-				newRioter.sorrow = randomNumber(0, 30);
-				newRioter.fear = randomNumber(0, 40);
-				newRioter.excitement = randomNumber(20, 90);
+				newRioter.rage = randomNumber(30, 80);
+				newRioter.sorrow = randomNumber(0, 10);
+				newRioter.fear = randomNumber(0, 60);
+				//newRioter.excitement = randomNumber(20, 90);
 				
 				// rioter's movement properties
 				newRioter.movementSpace = new Rectangle(crowdX, crowdY, crowdWidth, crowdHeight);
@@ -119,6 +152,12 @@ package
 				crowd.push(newRioter);
 				cameraContainer.addChild(newRioter);
 			}
+			
+			// sounds/audio
+			
+			// play + fade volume in example
+			//buildSongChannel = buildupSong.play(0, 1, buildSongTransform);
+			//changeVolume(buildSongChannel, buildSongTransform, buildSongTransform.volume, 1, 0.002);
 			
 			addEventListener(Event.ENTER_FRAME, mainLoop, false, 0, false);
 			stageRef.addEventListener(MouseEvent.MOUSE_DOWN, mouseClicked, false, 0, false);
@@ -144,29 +183,61 @@ package
 					{
 						cityUnrest ++;
 						crowd[i].deathCollected = true;
+						crowdDeathCt ++;
 					}
 					
 					crowd[i].rage += cityUnrest / 200;
 					
 					if (cityUnrest <= 0)
 					{
-						crowd[i].sorrow += 0.05;
+						crowd[i].sorrow += 0.5;
+					}
+					
+					if (tank.destroyed)
+					{
+						crowd[i].updateDelay = 0.5 * stageRef.frameRate;
+						crowd[i].fear = randomNumber(20, 60);
+						crowd[i].rage = 100;
+						crowd[i].movementSpace.x = crowdBoundaries.x;
 					}
 				}
+				
+				crowdCt = crowd.length;
+				crowdRealCt = crowdCt - crowdDeathCt;
+				changeVolume(crowdYellChannel, crowdYellTransform, crowdYellTransform.volume, crowdRealCt/300, 0.002);
 				
 				cityUnrest -= 0.005;
 				cityUnrest = stayInBounds(cityUnrest, 200, 0);
 				
 				crowdTextDisplay.text = "City Unrest: " + cityUnrest;
 				crowdTextDisplay.text = " ";
+				if (crowdRealCt <= 0)
+				{
+					crowdTextDisplay.text = "Crowd was controlled. " + crowdDeathCt + " killed";
+				}
 				crowdTextDisplay.setTextFormat(myFormat);
 				
 				// updating microwave laser thing
+				if (tank.destroyed)
+				{
+					menu.emotionControlRage.turnOffPower();
+					menu.emotionControlSorrow.turnOffPower();
+					menu.emotionControlFear.turnOffPower();
+					
+					crowdBoundaries.x = 50;
+					/*
+					crowdBoundaries.x -= 2;
+					if (crowdBoundaries.x <= 50)
+					{
+						crowdBoundaries.x = 50;
+					}
+					*/
+				}
 				microwaveRageAmt = menu.emotionControlRage.powerLevel*2;
 				microwaveSorrowAmt = menu.emotionControlSorrow.powerLevel*2;
 				microwaveFearAmt = menu.emotionControlFear.powerLevel*2;
 				
-				microwaveDamage = (Math.abs(microwaveRageAmt) + Math.abs(microwaveSorrowAmt) + Math.abs(microwaveFearAmt)) / 3;
+				microwaveDamage = (Math.abs(microwaveRageAmt) + Math.abs(microwaveSorrowAmt) + Math.abs(microwaveFearAmt)) / 5;
 				var tempDisplay = int((microwaveDamage)*100)/100;
 				menu.microwaveDamage.text = tempDisplay;
 				
@@ -207,11 +278,17 @@ package
 				// mouse interaction
 				if (mouseIsDown)
 				{
+					var hittingRioter:int = 0;
+					// microwave gun sound vol
+					//microwaveGunChannel = microwaveGun.play(0, 1, microwaveGunTransform);
+					
+					
 					var myObjects:Array = getObjectsUnderPoint(new Point(mouseX, mouseY));
 					for (var i = 0; i < myObjects.length; i++)
 					{
 						if (myObjects[i].parent is Rioter)
 						{
+							hittingRioter += 3;
 							var personUnderMouse:Rioter = myObjects[i].parent as Rioter;
 							personUnderMouse.fear += microwaveFearAmt;
 							personUnderMouse.sorrow += microwaveSorrowAmt;
@@ -224,7 +301,24 @@ package
 								personUnderMouse.heatOverlay.alpha = 1;
 							}
 						}
+						else
+						{
+							hittingRioter--;
+						}
 					}
+					
+					if (hittingRioter > 0)
+					{
+						changeVolume(microwaveGunChannel, microwaveGunTransform, microwaveGunTransform.volume, 0.5, 0.002);
+					}
+					else
+					{
+						changeVolume(microwaveGunChannel, microwaveGunTransform, microwaveGunTransform.volume, 0, 0.002);
+					}
+				}
+				else
+				{
+					changeVolume(microwaveGunChannel, microwaveGunTransform, microwaveGunTransform.volume, 0, 0.002);
 				}
 				
 				if (tank.isClicked)
@@ -241,11 +335,29 @@ package
 				}
 				
 				// sort the crowd by y positions
+				/*
 				crowd = Vector.<Rioter>(vectorToArray(crowd).sortOn("yPos", Array.NUMERIC));
 				for each(var r:Rioter in crowd)
 				{
 					r.parent && r.parent.addChild(r);
 				}
+				*/
+				
+				var children = getChildren(cameraContainer);
+				children = Vector.<DisplayObject>(vectorToArray(children).sortOn("yPos", Array.NUMERIC));
+				for each(var r:DisplayObject in children)
+				{
+					r.parent && r.parent.addChild(r);
+				}
+			}
+			
+			function getChildren( parObj:DisplayObjectContainer ):Vector.<DisplayObject>
+			{
+				var kids:Vector.<DisplayObject> = new Vector.<DisplayObject>();
+				var kidCount:int = parObj.numChildren;
+				for( var i:int = 0; i < kidCount; i++ ) 
+					kids.push( parObj.getChildAt( i ) );
+				return kids
 			}
 			
 			function mouseClicked(e:MouseEvent):void
@@ -322,6 +434,43 @@ package
 			}
 			
 			return value;
+		}
+		
+		// Change sound volume
+		public function changeVolume(soundChannel, transform, currentTransformVolume, newVolume, changeSpeed)
+		{
+			addEventListener(Event.ENTER_FRAME, volumeChangeLoop, false, 0, false);
+			transform.volume = currentTransformVolume;
+			
+			function volumeChangeLoop(event:Event)
+			{
+				if (transform.volume != newVolume)
+				{
+					//if the value is close enough but not quite equal...
+					if (transform.volume < newVolume + changeSpeed && transform.volume > newVolume - changeSpeed)
+					{
+						transform.volume = newVolume;
+					}
+					//otherwise check if greater or less than and do appropriate calculation
+					 if (transform.volume > newVolume)
+					{
+						transform.volume -= changeSpeed;
+					}
+					else if (transform.volume < newVolume)
+					{
+						transform.volume += changeSpeed;
+					}
+					
+					//update the sound channel
+					soundChannel.soundTransform = transform;
+				}
+				else
+				{
+					transform.volume = newVolume;
+					soundChannel.soundTransform = transform;
+					removeEventListener(Event.ENTER_FRAME, volumeChangeLoop, false);
+				}
+			}
 		}
 	}
 
