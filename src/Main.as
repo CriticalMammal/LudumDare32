@@ -81,7 +81,7 @@ package
 			var microwaveDamage:Number = 0;
 			
 			// crowd bounding box
-			var crowdX:int = 350;
+			var crowdX:int = 365;
 			var crowdY:int = 200;
 			var crowdWidth:int = 400;
 			var crowdHeight:int = 200;
@@ -96,7 +96,7 @@ package
 			// initialize people in the crowd
 			for (var i:int = 0; i < crowdCt; i++)
 			{
-				var newRioter:Rioter = new Rioter(stageRef);
+				var newRioter:Rioter = new Rioter(stageRef, tank);
 				
 				//set rioter's emotional properties
 				newRioter.rage = randomNumber(20, 70);
@@ -169,6 +169,40 @@ package
 				microwaveDamage = (Math.abs(microwaveRageAmt) + Math.abs(microwaveSorrowAmt) + Math.abs(microwaveFearAmt)) / 3;
 				var tempDisplay = int((microwaveDamage)*100)/100;
 				menu.microwaveDamage.text = tempDisplay;
+				
+				var tankHealth = tank.health;
+				if (tankHealth >= 90)
+				{
+					menu.tankStatus.text = "Very Shiny";
+				}
+				else if (tankHealth >= 80)
+				{
+					menu.tankStatus.text = "Pretty Great";
+				}
+				else if (tankHealth >= 65)
+				{
+					menu.tankStatus.text = "Light Damage";
+				}
+				else if (tankHealth >= 50)
+				{
+					menu.tankStatus.text = "Bruised"
+				}
+				else if (tankHealth >= 35)
+				{
+					menu.tankStatus.text = "Heavy Damage";
+				}
+				else if (tankHealth >= 20)
+				{
+					menu.tankStatus.text = "Limping";
+				}
+				else if (tankHealth > 0)
+				{
+					menu.tankStatus.text = "Last Leg";
+				}
+				else
+				{
+					menu.tankStatus.text = "Destroyed";
+				}
 				
 				// mouse interaction
 				if (mouseIsDown)

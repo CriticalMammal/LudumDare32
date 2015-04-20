@@ -42,6 +42,11 @@ package
 		private var runAwayZone:int;
 		private var runAwayFinished:Boolean = true;
 		
+		// other
+		private var tankRef:Tank;
+		private var throwCooldown:Number = 1.5 * 60;
+		private var currentThrowCooldown:Number = 0;
+		
 		// emotions
 		public var rage:Number = 0;
 		public var sorrow:Number = 0;
@@ -54,13 +59,14 @@ package
 		public var deathCollected:Boolean = false;
 		
 		
-		public function Rioter(stageIn:Stage) 
+		public function Rioter(stageIn:Stage, tank:Tank) 
 		{
 			stageRef = stageIn;
+			tankRef = tank;
 			updateDelay = 2 * stageRef.frameRate;
 			timeWaited = 0;
 			comfortLevel = randomNumber(0, 100);
-			
+			currentThrowCooldown = randomNumber(0, throwCooldown);
 			//this.cacheAsBitmap = true;
 			
 			runAwayZone =  800 + 100;
@@ -213,6 +219,19 @@ package
 			if (dead)
 			{
 				return;
+			}
+			
+			// attack tank
+			if (x - tankRef.x <= 550 && currentThrowCooldown <= 0) //330
+			{
+				var thrownObject:ThrownObject = new ThrownObject(this.height, tankRef);
+				addChild(thrownObject);
+				
+				currentThrowCooldown = throwCooldown;
+			}
+			else
+			{
+				currentThrowCooldown -= 1;
 			}
 			
 			comfortLevel -= 10;

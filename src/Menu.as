@@ -18,6 +18,8 @@ package
 		
 		public function Menu() 
 		{
+			fullWidth = width;
+			fullHeight = height;
 			width = 0;
 			height = 0;
 			x = shrinkX;
