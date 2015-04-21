@@ -102,6 +102,13 @@ package
 			var updateTime = 1 * 60;
 			var currentScreenTime = 0;
 			
+			var restartButton:RestartButton = new RestartButton();
+			restartButton.x = 350;
+			restartButton.y = 50;
+			restartButton.visible = false;
+			restartButton.addEventListener(MouseEvent.CLICK, selfDestruct);
+			stageContainer.addChild(restartButton);
+			
 			// placeholder stuff
 			var myFormat:TextFormat = new TextFormat();
 			myFormat.color = 0xDED5D1; 
@@ -121,10 +128,11 @@ package
 			stageContainer.addChild(crowdTextDisplay);
 			
 			var instructionsDisplayCt:int = 0;
+			var restartButtonWait:int = 0;
 			
 			// game variables
 			crowd = new Vector.<Rioter>();
-			var crowdCt:int = 200;
+			var crowdCt:int = 150;
 			var crowdDeathCt:int = 0;
 			var crowdRealCt:int = crowdCt;
 			var cityUnrest:Number = 50; // total unhappiness?
@@ -257,12 +265,19 @@ package
 				if (crowdRealCt <= 0)
 				{
 					crowdTextDisplay.text = "Crowd was Controlled - " + crowdDeathCt + " Killed";
+					restartButtonWait ++;
 				}
 				else if (tank.destroyed)
 				{
 					crowdTextDisplay.text = "Disorder - Tank Operator Killed";
+					restartButtonWait ++;
 				}
 				crowdTextDisplay.setTextFormat(myFormat);
+				
+				if (restartButtonWait >= 60 * 5)
+				{
+					restartButton.visible = true;
+				}
 				
 				// updating microwave laser thing
 				if (tank.destroyed)
@@ -422,7 +437,8 @@ package
 				removeEventListener(Event.ENTER_FRAME, mainLoop);
 				stageRef.removeEventListener(MouseEvent.MOUSE_DOWN, mouseClicked);
 				stageRef.removeEventListener(MouseEvent.MOUSE_UP, mouseUp);
-				stageRef.removeEventListener(MouseEvent.RIGHT_MOUSE_DOWN, selfDestruct);
+				restartButton.removeEventListener(MouseEvent.CLICK, selfDestruct);
+				stageContainer.removeChild(restartButton);
 				
 				removeGame();
 			}
@@ -445,7 +461,7 @@ package
 				cameraContainer.removeChild(r);
 			}
 			
-			removeChild(crowdTextDisplay);
+			stageContainer.removeChild(crowdTextDisplay);
 			cameraContainer.removeChild(tank);
 			
 			game();
