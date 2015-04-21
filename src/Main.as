@@ -28,12 +28,14 @@ package
 		public var gameRateMultiplier:Number = 1;
 		public var worldSpeed:Number = 60 * gameRateMultiplier;
 		public var cameraContainer:Sprite; // everything visual goes in this
+		public var stageContainer:Sprite; // put even the cameraContainer in this
 		
 		// game variables
 		public var crowdTextDisplay:TextField;
 		public var crowd:Vector.<Rioter>;
 		public var tank:Tank;
 		public var menu:Menu;
+		public var background:bgImage
 		
 		// constant playing sounds
 		public var bgAmbience:Sound = new bgAmbienceSound();
@@ -58,12 +60,18 @@ package
 		}
 		
 		// The menu kind of always stays there? It just drops down?
-		public function init():void 
+		public function init():void
 		{
+			stageContainer = new Sprite();
+			addChild(stageContainer);
+			
+			var background:bgImage = new bgImage();
+			stageContainer.addChild(background);
+			
 			cameraContainer = new Sprite();
 			cameraContainer.x = 0;
 			cameraContainer.y = 0;
-			addChild(cameraContainer);
+			stageContainer.addChild(cameraContainer);
 			game();// game will play in background at all times
 			
 			menu = new Menu(); // menu will overlay and allow options
@@ -84,6 +92,16 @@ package
 		
 		public function game():void
 		{
+			// for subtle screen movement
+			var stageX:Number = stageContainer.x;
+			var stageY:Number = stageContainer.y;
+			var motionAmt = 5;
+			var randStageX:Number = randomNumber( -motionAmt, motionAmt);
+			var randStageY:Number = randomNumber( -motionAmt, motionAmt);
+			var motionSpeed = 0.005;
+			var updateTime = 1 * 60;
+			var currentScreenTime = 0;
+			
 			// placeholder stuff
 			var myFormat:TextFormat = new TextFormat();
 			myFormat.color = 0xDED5D1; 
@@ -100,7 +118,7 @@ package
 			crowdTextDisplay.wordWrap = true;
 			crowdTextDisplay.text = "Control the Rioting Crowd";
 			crowdTextDisplay.setTextFormat(myFormat);  
-			addChild(crowdTextDisplay);
+			stageContainer.addChild(crowdTextDisplay);
 			
 			var instructionsDisplayCt:int = 0;
 			
@@ -169,7 +187,20 @@ package
 			
 			
 			function mainLoop(e:Event):void
-			{	
+			{
+				if (currentScreenTime >= updateTime)
+				{
+					randStageX = randomNumber( -motionAmt, motionAmt);
+					randStageY = randomNumber( -motionAmt, motionAmt);
+					
+					currentScreenTime = 0;
+				}
+				stageX = doLerp(stageX, randStageX, motionSpeed);
+				stageY = doLerp(stageY, randStageY, motionSpeed);
+				stageContainer.x = stageX;
+				stageContainer.y = stageY;
+				currentScreenTime++;
+				
 				for (i = 0; i < crowd.length; i++)
 				{
 					// update rioters
@@ -487,6 +518,32 @@ package
 					removeEventListener(Event.ENTER_FRAME, volumeChangeLoop, false);
 				}
 			}
+		}
+		
+		// current speed, goal speed, amount of lerp
+		public function doLerp(value:Number, goal:Number, lerpSpeed:Number):Number
+		{
+			var lerpValue:Number = 0.0;
+
+			// Update
+			if (value != goal)
+			{
+				lerpValue = 0.0;
+			}
+
+			if (lerpValue < 1.0)
+			{
+				lerpValue += lerpSpeed;
+			}
+
+			var newVal:Number = lerp(value, lerpValue, goal);
+			value = newVal;
+			return value;
+		}
+			
+		public function lerp(x:Number, t:Number, y:Number):Number
+		{
+			return x * (1-t) + y*t;
 		}
 	}
 
