@@ -95,7 +95,7 @@ package
 			// for subtle screen movement
 			var stageX:Number = stageContainer.x;
 			var stageY:Number = stageContainer.y;
-			var motionAmt = 5;
+			var motionAmt = 8;
 			var randStageX:Number = randomNumber( -motionAmt, motionAmt);
 			var randStageY:Number = randomNumber( -motionAmt, motionAmt);
 			var motionSpeed = 0.005;
@@ -246,7 +246,7 @@ package
 				
 				crowdCt = crowd.length;
 				crowdRealCt = crowdCt - crowdDeathCt;
-				changeVolume(crowdYellChannel, crowdYellTransform, crowdYellTransform.volume, crowdRealCt/300, 0.002);
+				changeVolume(crowdYellChannel, crowdYellTransform, crowdYellTransform.volume, crowdRealCt/200, 0.002);
 				
 				cityUnrest -= 0.005;
 				cityUnrest = stayInBounds(cityUnrest, 200, 0);
@@ -264,12 +264,12 @@ package
 				
 				if (crowdRealCt <= 0)
 				{
-					crowdTextDisplay.text = "Crowd was Controlled - " + crowdDeathCt + " Killed";
+					crowdTextDisplay.text = "Crowd was Controlled : " + crowdDeathCt + " Killed";
 					restartButtonWait ++;
 				}
 				else if (tank.destroyed)
 				{
-					crowdTextDisplay.text = "Disorder - Tank Operator Killed";
+					crowdTextDisplay.text = "Disorder : Tank Operator Killed";
 					restartButtonWait ++;
 				}
 				crowdTextDisplay.setTextFormat(myFormat);
@@ -371,7 +371,7 @@ package
 					
 					if (hittingRioter > 0)
 					{
-						changeVolume(microwaveGunChannel, microwaveGunTransform, microwaveGunTransform.volume, 0.5, 0.002);
+						changeVolume(microwaveGunChannel, microwaveGunTransform, microwaveGunTransform.volume, 0.4, 0.003);
 					}
 					else
 					{
@@ -463,6 +463,9 @@ package
 			
 			stageContainer.removeChild(crowdTextDisplay);
 			cameraContainer.removeChild(tank);
+			menu.emotionControlRage.powerOff = false;
+			menu.emotionControlSorrow.powerOff = false;
+			menu.emotionControlFear.powerOff = false;
 			
 			game();
 		}
