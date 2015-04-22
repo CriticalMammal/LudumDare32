@@ -356,6 +356,7 @@ package
 							personUnderMouse.sorrow += microwaveSorrowAmt;
 							personUnderMouse.rage += microwaveRageAmt;
 							personUnderMouse.health -= microwaveDamage;
+							personUnderMouse.currentThrowCooldown -= microwaveRageAmt;
 							personUnderMouse.timeWaited += 10; // update more frequently
 							personUnderMouse.goalX += randomNumber(0, microwaveDamage);
 							if (personUnderMouse.heatOverlay.alpha > 1)

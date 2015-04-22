@@ -46,7 +46,7 @@ package
 		// other
 		private var tankRef:Tank;
 		private var throwCooldown:Number = 1.5 * 60;
-		private var currentThrowCooldown:Number = 0;
+		public var currentThrowCooldown:Number = 0;
 		
 		// emotions
 		public var rage:Number = 0;
