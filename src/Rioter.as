@@ -226,7 +226,6 @@ package
 						{
 							dead = true;
 							
-							var currentAlpha = heatOverlay.alpha;
 							heatOverlay.alpha = 0;
 							this.gotoAndPlay("death");
 						}
@@ -249,14 +248,15 @@ package
 			}
 			
 			// animations
-			/*
-			if (rage > fear && rage >= 90)
+			
+			if (rage > fear && rage > 50)
 			{
 				if (rage > sorrow)
 				{
 					// rage
-					if (currentFrameLabel != "rage")
+					if (currentLabel != "rage")
 					{
+						heatOverlay.alpha = 0;
 						gotoAndPlay("rage");
 					}
 					
@@ -264,36 +264,40 @@ package
 				else
 				{
 					// sorrow
-					if (currentFrameLabel != "sorrow")
+					if (currentLabel != "sorrow")
 					{
+						heatOverlay.alpha = 0;
 						gotoAndPlay("sorrow");
 					}
 				}
 			}
-			else if (fear > rage && fear > 70)
+			else if (fear > rage && fear > 50)
 			{
 				// fear
-				if (currentFrameLabel != "fear")
+				if (currentLabel != "fear")
 				{
+					heatOverlay.alpha = 0;
 					gotoAndPlay("fear");
 				}
 			}
 			else if (sorrow > rage)
 			{
 				// sorrow
-				if (currentFrameLabel != "sorrow")
+				if (currentLabel != "sorrow")
 				{
+					heatOverlay.alpha = 0;
 					gotoAndPlay("sorrow");
 				}
 			}
 			else
 			{
-				if (currentFrameLabel != "idle")
+				if (currentLabel != "idle")
 				{
+					heatOverlay.alpha = 0;
 					gotoAndPlay("idle");
 				}
 			}
-			*/
+			
 			
 			// attack tank
 			if (x - tankRef.x <= 550 && currentThrowCooldown <= 0) //330

@@ -16,6 +16,9 @@ package
 	import flash.text.TextField;
 	import flash.text.TextFieldType;
 	import flash.text.TextFormat;
+	import flash.utils.getDefinitionByName;
+	import flash.utils.getQualifiedClassName;
+
 	/**
 	 * ...
 	 * @author Dylan Gallardo
@@ -63,6 +66,7 @@ package
 		public function init():void
 		{
 			stageContainer = new Sprite();
+			stageContainer.name = "stageContainer";
 			addChild(stageContainer);
 			
 			var background:bgImage = new bgImage();
@@ -95,7 +99,7 @@ package
 			// for subtle screen movement
 			var stageX:Number = stageContainer.x;
 			var stageY:Number = stageContainer.y;
-			var motionAmt = 8;
+			var motionAmt = 12;
 			var randStageX:Number = randomNumber( -motionAmt, motionAmt);
 			var randStageY:Number = randomNumber( -motionAmt, motionAmt);
 			var motionSpeed = 0.005;
@@ -106,6 +110,7 @@ package
 			restartButton.x = 350;
 			restartButton.y = 50;
 			restartButton.visible = false;
+			restartButton.name = "restartButton";
 			restartButton.addEventListener(MouseEvent.CLICK, selfDestruct);
 			stageContainer.addChild(restartButton);
 			
@@ -307,6 +312,10 @@ package
 				if (tankHealth >= 90)
 				{
 					menu.tankStatus.text = "Very Shiny";
+					if (tank.currentLabel != "shiny")
+					{
+						//tank.gotoAndPlay("shiny");
+					}
 				}
 				else if (tankHealth >= 80)
 				{
@@ -319,6 +328,10 @@ package
 				else if (tankHealth >= 50)
 				{
 					menu.tankStatus.text = "Bruised"
+					if (tank.currentLabel != "bruised")
+					{
+						tank.gotoAndPlay("bruised");
+					}
 				}
 				else if (tankHealth >= 35)
 				{
@@ -345,13 +358,34 @@ package
 					//microwaveGunChannel = microwaveGun.play(0, 1, microwaveGunTransform);
 					
 					
-					var myObjects:Array = getObjectsUnderPoint(new Point(mouseX, mouseY));
+					var myObjectsArray:Array = getObjectsUnderPoint(new Point(mouseX, mouseY));
+					var myObjects:Vector.<DisplayObject> = Vector.<DisplayObject>(myObjectsArray);
 					for (var i = 0; i < myObjects.length; i++)
 					{
+						trace(getQualifiedClassName(myObjects[i]));
+						var personUnderMouse:Rioter;
+						
 						if (myObjects[i].parent is Rioter)
 						{
-							hittingRioter += 3;
-							var personUnderMouse:Rioter = myObjects[i].parent as Rioter;
+							hittingRioter += 10;
+							personUnderMouse = myObjects[i].parent as Rioter;
+							personUnderMouse.fear += microwaveFearAmt;
+							personUnderMouse.sorrow += microwaveSorrowAmt;
+							personUnderMouse.rage += microwaveRageAmt;
+							personUnderMouse.health -= microwaveDamage;
+							personUnderMouse.currentThrowCooldown -= microwaveRageAmt;
+							personUnderMouse.timeWaited += 10; // update more frequently
+							personUnderMouse.goalX += randomNumber(0, microwaveDamage);
+							if (personUnderMouse.heatOverlay.alpha > 1)
+							{
+								personUnderMouse.heatOverlay.alpha = 1;
+							}
+						}
+						else if (getQualifiedClassName(myObjects[i]) != "flash.text::TextField" && !(myObjects[i].parent is Stage) &&
+							getQualifiedClassName(myObjects[i].parent.parent) == "Rioter")
+						{
+							hittingRioter += 10;
+							personUnderMouse = myObjects[i].parent.parent as Rioter;
 							personUnderMouse.fear += microwaveFearAmt;
 							personUnderMouse.sorrow += microwaveSorrowAmt;
 							personUnderMouse.rage += microwaveRageAmt;
@@ -367,6 +401,8 @@ package
 						else
 						{
 							hittingRioter--;
+							
+							//trace(getQualifiedClassName(myObjects[i].parent.parent));
 						}
 					}
 					
